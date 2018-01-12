@@ -21,7 +21,7 @@ Once in the `chatbot` root directory, head to the sub-directory `chatbot` and st
 
 Then go to the following url and interact with the application as you see convenient:
 
-    http://localhost:8888/chat
+    http://localhost:8000/chat
 
 Optional: You can use `curl` to emulate the requests, in `extra` there are some commands with their explanation.
 
