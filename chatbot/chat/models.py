@@ -19,7 +19,8 @@ class Profile(models.Model):
 
 
 class Message(models.Model):
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    origin = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='origin')
+    target = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='target')
     content = models.TextField(blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
