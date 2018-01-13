@@ -24,6 +24,9 @@ class Message(models.Model):
     content = models.TextField(blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-created_at']
+
 
 # Receiving methods for Profile and User synchronization
 
