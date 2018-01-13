@@ -4,6 +4,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.template import loader
+from django.db.models import Q
+
+from .models import Message
 
 
 def login_view(request):
@@ -78,7 +81,21 @@ def chat(request):
 
 
 def history(request, user=''):
-    return HttpResponse('You got to HISTORY page of ' + user)
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+    if not user == request.user.username:
+        return HttpResponseRedirect(reverse('u-profile', args=[user]))
+
+    user_obj = User.objects.get(username=user)
+    messages = Message.objects.filter(Q(origin=user_obj) | Q(target=user_obj))
+
+    template = loader.get_template('chat/history.html')
+    context = {
+        'username': user,
+        'messages': messages,
+    }
+
+    return HttpResponse(template.render(context, request))
 
 
 def profile(request, user=''):
