@@ -1,0 +1,10 @@
+<h2>Chat with the Bot</h2>
+<h2>{{ username }}</h2>
+ <form method="post">
+   {% csrf_token %}
+   <label><b>Write</b></label>
+   <input type="text" placeholder="Enter your message to the bot" name="message" size="100" required>
+   <button type="submit">Message</button>
+   <h3>Bot says</h3>
+   {{ response }}
+</form>

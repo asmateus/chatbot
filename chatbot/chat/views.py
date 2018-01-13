@@ -2,8 +2,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render
-
 from django.contrib.auth.models import User
+from django.template import loader
 
 
 def login_view(request):
@@ -64,9 +64,17 @@ def create_user_view(request):
 
 # Basic API actions
 
-
 def chat(request):
-    return HttpResponse('You got to CHAT page')
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+
+    if request.method == 'GET':
+        template = loader.get_template('chat/chat.html')
+        context = {
+            'username': request.user.username,
+            'response': 'Hola',
+        }
+        return HttpResponse(template.render(context, request))
 
 
 def history(request, user=''):
