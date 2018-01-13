@@ -18,7 +18,6 @@ def ws_receive(message):
     print('receiving')
     username = message.channel_session['username']
     data = json.loads(message['text'])
-    print(data)
 
     message = Message(
         origin=User.objects.get(username=username),
@@ -29,17 +28,24 @@ def ws_receive(message):
 
     Group('chat-' + username).send({'text': json.dumps(
         {
-            'created_at': '2018-01-13',
+            'created_at': str(message.created_at),
             'username': message.origin.username,
             'message': message.content,
         }
     )})
 
+    answer = Message(
+        origin=User.objects.get(username='shinobu'),
+        target=User.objects.get(username=username),
+        content='Hello sir, how may I help you?',
+    )
+    answer.save()
+
     Group('chat-' + username).send({'text': json.dumps(
         {
-            'created_at': '2018-01-13',
-            'username': 'shinobu',
-            'message': 'Hello sir, how may I help you?'
+            'created_at': str(answer.created_at),
+            'username': answer.origin.username,
+            'message': answer.content
         }
     )})
 
