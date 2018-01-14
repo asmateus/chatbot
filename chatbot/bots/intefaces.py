@@ -1,14 +1,14 @@
 import random
 import json
 import re
-
 import pika
 
 from django.contrib.auth.models import User
 
-from .. import helpers
-from .. import models
-from .types import ALL_QUERIES
+from chat import helpers
+from chat import models
+
+from .query_bots import ALL_QUERIES
 from .generic_answers import ANSWERS
 
 
