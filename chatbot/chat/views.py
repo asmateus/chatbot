@@ -99,8 +99,28 @@ def history(request, user=''):
 
 
 def profile(request, user=''):
-    return HttpResponse('You got to PROFILE page of ' + user)
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+
+    if request.method == 'GET':
+        user_obj = User.objects.get(username=user)
+        template = loader.get_template('chat/profile.html')
+        context = {
+            'username': user_obj.username,
+            'fullname': user_obj.get_full_name(),
+            'location': user_obj.profile.location,
+            'description': user_obj.profile.description,
+            'is_user': request.user.username == user
+        }
+
+        return HttpResponse(template.render(context, request))
+    if request.method == 'POST':
+        return HttpResponseRedirect(reverse('u-profile-edit', args=[user]))
 
 
 def profile_edit(request, user=''):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+    if not user == request.user.username:
+        return HttpResponseRedirect(reverse('u-profile', args=[user]))
     return HttpResponse('You got to PROFILE EDIT page of ' + user)

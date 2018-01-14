@@ -1,0 +1,17 @@
+<h5>
+	Other pages: 
+	<a href="{% url 'u-history' username %}">history</a>
+	<a href="{% url 'app-chat' %}">chat</a>
+	<a href="{% url 'logout' %}">Logout</a>
+</h5>
+
+<h2>Profile of {{username}}</h2>
+<strong>Name:</strong> {{fullname}}<br>
+<strong>Location:</strong> {{location}}<br>
+<strong>About me:</strong> {{description}}<br>
+{% if is_user %}
+<form method="post">
+   {% csrf_token %}
+   <button type="submit">Edit</button>
+{% endif %}
+</form>
