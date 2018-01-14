@@ -1,0 +1,21 @@
+<h5>
+   Back to: 
+   <a href="{% url 'u-profile' username %}">profile</a>
+</h5>
+
+<h2>Edit user {{username}}</h2>
+ <form method="post">
+   {% csrf_token %}
+   <label><b>First Name</b></label>
+   <input type="text" placeholder="Enter First Name" name="first_name" value="{{first_name}}"><br>
+
+   <label><b>Last Name</b></label>
+   <input type="text" placeholder="Enter Last Name" name="last_name" value="{{last_name}}"><br>
+
+   <label><b>Location</b></label>
+   <input type="text" placeholder="Enter Location" name="location" value="{{location}}"><br>
+
+
+   <textarea placeholder="Enter description" name="description">{{description}}</textarea>
+   <button type="submit">Update User</button>
+</form>

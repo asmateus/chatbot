@@ -133,4 +133,31 @@ def profile_edit(request, user=''):
         return HttpResponseRedirect(reverse('login'))
     if not user == request.user.username:
         return HttpResponseRedirect(reverse('u-profile', args=[user]))
-    return HttpResponse('You got to PROFILE EDIT page of ' + user)
+
+    if request.method == 'GET':
+        user_obj = User.objects.get(username=user)
+        template = loader.get_template('chat/profile_edit.html')
+        context = {
+            'username': user_obj.username,
+            'first_name': user_obj.first_name,
+            'last_name': user_obj.last_name,
+            'location': user_obj.profile.location,
+            'description': user_obj.profile.description,
+        }
+
+        return HttpResponse(template.render(context, request))
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        location = request.POST.get('location')
+        description = request.POST.get('description')
+
+        user_obj = User.objects.get(username=user)
+        user_obj.first_name = first_name
+        user_obj.last_name = last_name
+        user_obj.profile.location = location
+        user_obj.profile.description = description
+
+        user_obj.save()
+
+        return HttpResponseRedirect(reverse('u-profile', args=[user]))
