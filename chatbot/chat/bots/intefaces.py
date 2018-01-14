@@ -2,6 +2,8 @@ import random
 import json
 import re
 
+import pika
+
 from django.contrib.auth.models import User
 
 from .. import helpers
@@ -20,8 +22,26 @@ class BotFactory:
         return _Interface(BotFactory._INTERFACES[0])
 
 
-class _Interface:
+class _RabbitProducer:
+    def __init__(self):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters('localhost'))
+        self.channel = self.connection.channel()
+
+    def post_query(self, query, message):
+        # Queue is only created once, afterwards this
+        # does nothing, unless a different query is used.
+        self.channel.queue_declare(queue=query)
+        self.channel.basic_publish(
+            exchange='',
+            routing_key=query,
+            body=message.replace(query, ''))
+        self.connection.close()
+
+
+class _Interface(_RabbitProducer):
     def __init__(self, name):
+        super(_Interface, self).__init__()
         # Lock until a user is found
         self.__locked = True
 
@@ -50,6 +70,10 @@ class _Interface:
             # User did not issue a query, simulate
             # intelligent chat and save to db
             self.__answer_and_store(message)
+            return
+
+        # Message was a special command
+        self.post_query(query, message)
 
     def __query_of(self, message):
         exp = '^QUERY='
