@@ -6,11 +6,11 @@ from . import views
 urlpatterns = [
     path('', views.chat, name='app-chat'),
     path('chat/', views.chat, name='app-chat'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('create-user/', views.create_user_view, name='create-user'),
-    path('u/<user>/', views.profile, name='u-profile'),
-    path('u/<user>/profile/', views.profile, name='u-profile'),
-    path('u/<user>/profile/edit', views.profile_edit, name='u-profile-edit'),
-    path('u/<user>/history/', views.history, name='u-history'),
+    path('login/', views.login, name='login'),
+    path('logout/', views.logout, name='logout'),
+    path('create-user/', views.create_user, name='create-user'),
+    path('u/<username>/', views.profile, name='u-profile'),
+    path('u/<username>/profile/', views.profile, name='u-profile'),
+    path('u/<username>/profile/edit', views.profile_edit, name='u-profile-edit'),
+    path('u/<username>/history/', views.history, name='u-history'),
 ]

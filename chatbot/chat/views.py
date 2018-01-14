@@ -1,163 +1,140 @@
-from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from django.template import loader
-from django.db.models import Q
+from django.contrib import auth
 
 from .models import Message
+from .helpers import *
 
 
-def login_view(request):
-    if request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('u-profile', args=[request.user.username]))
-
+@is_authenticated('app-chat')
+def login(request):
     if request.method == 'GET':
         return render(request, 'chat/login.html')
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        user = authenticate(request, username=username, password=password)
+        user = auth.authenticate(request,
+                                 username=username,
+                                 password=password)
+
+        # Wrong password, or username does not exist
         if user is None:
-            return HttpResponseRedirect(reverse('login'))
+            return redirect(reverse('login'))
 
-        login(request, user)
+        # Successful authentication, remember it
+        auth.login(request, user)
 
-        return HttpResponseRedirect(reverse('u-profile', args=[username]))
-
-
-def logout_view(request):
-    logout(request)
-    return HttpResponseRedirect(reverse('login'))
+        return redirect(reverse('app-chat'))
 
 
-def create_user_view(request):
-    if request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('u-profile', args=[request.user.username]))
+def logout(request):
+    # In any case, attempt logout and
+    # redirect to login page.
+    auth.logout(request)
+    return redirect(reverse('login'))
 
+
+@is_authenticated('app-chat')
+def create_user(request):
     if request.method == 'GET':
         return render(request, 'chat/create_user.html')
 
     if request.method == 'POST':
+        # username is the only crucial parameter
+        # for validation
         username = request.POST.get('username')
-        email = request.POST.get('email')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        password = request.POST.get('password')
+        if not (is_valid(username) or is_created(username)):
+            return redirect(reverse('create-user'))
 
-        if User.objects.filter(username=username).count():
-            return HttpResponseRedirect(reverse('create-user'))
-
+        # It is safe to create the user
+        # Get post values and pass them to user
         user = User.objects.create_user(
-            username=username,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            password=password)
+            username=request.POST.get('username'),
+            email=request.POST.get('email'),
+            first_name=request.POST.get('first_name'),
+            last_name=request.POST.get('last_name')
+        )
         user.save()
+        auth.login(request, user)
 
-        login(request, user)
-
-        return HttpResponseRedirect(reverse('u-profile', args=[username]))
+        return redirect(reverse('u-profile', args=[username]))
 
 
 # Basic API actions
 
+@is_not_authenticated('login')
 def chat(request):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse('login'))
-
     if request.method == 'GET':
-        template = loader.get_template('chat/chat.html')
-        context = {
-            'username': request.user.username,
-            'response': 'Hola',
-        }
-        return HttpResponse(template.render(context, request))
+        # Pass the username to display it in the title
+        # of the chat.
+        context = {'username': request.user.username}
+        return render(request, 'chat/chat.html', context)
 
 
-def history(request, user=''):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse('login'))
-    if not user == request.user.username:
-        return HttpResponseRedirect(reverse('u-profile', args=[user]))
+@is_not_authenticated('login')
+def history(request, username=''):
+    """Static history page, same response always
+    """
 
-    limit = request.GET.get('limit_to', '50')
-    limit = int(limit)
+    # Is the logged user the owner of the information
+    if not is_user_of_content(request, username):
+        return redirect(reverse('u-profile', args=[username]))
 
-    user_obj = User.objects.get(username=user)
-    messages = Message.objects.filter(Q(origin=user_obj) | Q(target=user_obj))
+    # The user may supply an output limit as a parameter
+    # it is not trusted so it is sanitized
+    raw_limit = request.GET.get('limit_to')
+    limit = Message.objects.sanitize_raw_limit(raw_limit)
 
-    if limit < -1:
-        limit = 0
+    messages = Message.objects.of(username, limit=limit)
 
-    if limit != -1:
-        messages = messages[:limit]
-
-    template = loader.get_template('chat/history.html')
-    context = {
-        'username': user,
-        'messages': messages,
-        'limit': limit,
-    }
-
-    return HttpResponse(template.render(context, request))
+    context = {'username': username, 'messages': messages, 'limit': limit}
+    return render(request, 'chat/history.html', context)
 
 
-def profile(request, user=''):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse('login'))
-
+@is_not_authenticated('login')
+def profile(request, username=''):
     if request.method == 'GET':
-        user_obj = User.objects.get(username=user)
-        template = loader.get_template('chat/profile.html')
+        # Load html with user info
+        user = User.objects.get(username=username)
         context = {
-            'username': user_obj.username,
-            'fullname': user_obj.get_full_name(),
-            'location': user_obj.profile.location,
-            'description': user_obj.profile.description,
-            'is_user': request.user.username == user
+            'username': user.username,
+            'fullname': user.get_full_name(),
+            'location': user.profile.location,
+            'description': user.profile.description,
+            'is_user': is_user_of_content(request, username)  # To hide edit
         }
+        return render(request, 'chat/profile.html', context)
 
-        return HttpResponse(template.render(context, request))
     if request.method == 'POST':
-        return HttpResponseRedirect(reverse('u-profile-edit', args=[user]))
+        # An attempt to edit the profile was triggered
+        return redirect(reverse('u-profile-edit', args=[username]))
 
 
-def profile_edit(request, user=''):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse('login'))
-    if not user == request.user.username:
-        return HttpResponseRedirect(reverse('u-profile', args=[user]))
+@is_not_authenticated('login')
+def profile_edit(request, username=''):
+    # Is the logged user the owner of the information
+    if not is_user_of_content(request, username):
+        return redirect(reverse('u-profile', args=[username]))
 
     if request.method == 'GET':
-        user_obj = User.objects.get(username=user)
-        template = loader.get_template('chat/profile_edit.html')
+        # Show the form for editing
+        user = User.objects.get(username=username)
         context = {
-            'username': user_obj.username,
-            'first_name': user_obj.first_name,
-            'last_name': user_obj.last_name,
-            'location': user_obj.profile.location,
-            'description': user_obj.profile.description,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'location': user.profile.location,
+            'description': user.profile.description,
         }
+        return render(request, 'chat/profile_edit.html', context)
 
-        return HttpResponse(template.render(context, request))
     if request.method == 'POST':
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        location = request.POST.get('location')
-        description = request.POST.get('description')
+        # Update the user with the edits
+        user = User.objects.get(username=username)
+        user.profile.update(request.POST)
+        user.save()
 
-        user_obj = User.objects.get(username=user)
-        user_obj.first_name = first_name
-        user_obj.last_name = last_name
-        user_obj.profile.location = location
-        user_obj.profile.description = description
-
-        user_obj.save()
-
-        return HttpResponseRedirect(reverse('u-profile', args=[user]))
+        return redirect(reverse('u-profile', args=[username]))
