@@ -45,3 +45,8 @@ def is_valid(username):
 
 def is_user_of_content(request, username):
     return request.user.username == username
+
+
+def date_of(timestamp):
+    if timestamp is not None:
+        return timestamp.now().strftime('%Y-%m-%d %H:%M:%S')

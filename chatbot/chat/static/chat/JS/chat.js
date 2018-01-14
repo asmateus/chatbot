@@ -4,8 +4,10 @@ var chat_socket = new WebSocket('ws://' + window.location.host + "/chat/" + docu
 chat_socket.onmessage = function(message) {
     var data = JSON.parse(message.data);
     var chat = document.getElementById('chat');
-    chat.innerHTML += ' -------- ' + data.created_at + ' -------- ' + '<br>'
-    chat.innerHTML += data.username + ' >>>  ' + data.message + '<br>'
+    var new_data = '';
+    new_data += ' -------- ' + data.created_at + ' -------- ' + '<br>';
+    new_data += data.username + ' >>>  ' + data.message + '<br>';
+    chat.innerHTML = new_data + chat.innerHTML;
 };
 
 function OnSubmitForm() {
