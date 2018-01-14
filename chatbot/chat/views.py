@@ -86,13 +86,23 @@ def history(request, user=''):
     if not user == request.user.username:
         return HttpResponseRedirect(reverse('u-profile', args=[user]))
 
+    limit = request.GET.get('limit_to', '50')
+    limit = int(limit)
+
     user_obj = User.objects.get(username=user)
     messages = Message.objects.filter(Q(origin=user_obj) | Q(target=user_obj))
+
+    if limit < -1:
+        limit = 0
+
+    if limit != -1:
+        messages = messages[:limit]
 
     template = loader.get_template('chat/history.html')
     context = {
         'username': user,
         'messages': messages,
+        'limit': limit,
     }
 
     return HttpResponse(template.render(context, request))

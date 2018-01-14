@@ -6,6 +6,16 @@
 </h5>
 
 <h2>History of {{username}}</h2>
+<h4>
+{% if limit == -1 %}
+Output not limited.
+{% elif limit == 1 %}
+Output limited to {{limit}} entry.
+{% else %}
+Output limited to {{limit}} entries.
+{% endif %}
+
+</h4>
    <div id="history">
    	{% for message in messages %}
    	{{message.origin}} >>>  {{message.content}} <br>
