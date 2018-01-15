@@ -30,27 +30,38 @@ class RedistributionListener:
     """
     TIMEOUT = 10
 
-    def __init__(self, interface):
+    def __init__(self, interface, queue):
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters('localhost'))
         self.channel = self.connection.channel()
-        self.channel.queue_declare(queue='redistribution')
-        self.channel.basic_consume(self.callback, queue='redistribution',
+        self.channel.queue_declare(queue=queue)
+        self.channel.basic_consume(self.callback, queue=queue,
                                    no_ack=True)
         self.connection.add_timeout(self.TIMEOUT, self.on_timeout)
 
         self.interface = interface
+
+        # Instead of stop consuming upon callback,
+        # let callback be repeatedly called to empty
+        # the queue of possible stale messages.
+        # Finally timing out gracefully by the
+        # accomplished flag.
+        self.accomplished = False
         self.start_consuming()
 
     def on_timeout(self):
         self.channel.stop_consuming()
-        self.interface.on_worker_result('It took me too long... sorry.')
+
+        if not self.accomplished:
+            self.interface.on_worker_result('It took me too long... sorry.')
+        else:
+            print('Graceful exit')
 
     def start_consuming(self):
         self.channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
-        self.channel.stop_consuming()
+        self.accomplished = True
         self.interface.on_worker_result(body.decode('utf-8'))
 
 
@@ -60,14 +71,19 @@ class _RabbitProducer:
             pika.ConnectionParameters('localhost'))
         self.channel = self.connection.channel()
 
-    def post_query(self, query, message):
-        # Queue is only created once, afterwards this
-        # does nothing, unless a different query is used.
+    def post_query(self, query, message, username):
+        """
+        Create a temporal queue for the query.
+        body: of format username|message.
+        message: of format query=company.
+        username: needed for the redistribution queue.
+        """
+        body = username + '|' + message.replace(query + '=', '')
         self.channel.queue_declare(queue=query)
         self.channel.basic_publish(
             exchange='',
             routing_key=query,
-            body=message.replace(query + '=', ''))
+            body=body)
         self.connection.close()
 
 
@@ -105,7 +121,7 @@ class _Interface(_RabbitProducer):
             return
 
         # Message was a special command
-        self.post_query(query, message)
+        self.post_query(query, message, self.client.username)
         self.__await_result()
 
     def on_worker_result(self, result):
@@ -120,7 +136,7 @@ class _Interface(_RabbitProducer):
     def __await_result(self):
         listen_thread = threading.Thread(
             target=RedistributionListener,
-            args=(self,))
+            args=(self, 'redistribution-' + self.client.username))
         listen_thread.start()
 
     def __query_of(self, message):

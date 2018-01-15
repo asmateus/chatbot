@@ -6,14 +6,16 @@ from . import types
 from . import apis
 
 
-def redistribute(message):
+def redistribute(client, message):
+    queue = 'redistribution-' + client
+
     connection = pika.BlockingConnection(
         pika.ConnectionParameters('localhost'))
     channel = connection.channel()
-    channel.queue_declare(queue='redistribution')
+    channel.queue_declare(queue=queue)
     channel.basic_publish(
         exchange='',
-        routing_key='redistribution',
+        routing_key=queue,
         body=message)
     connection.close()
 
@@ -30,6 +32,7 @@ class _RabbitConsumer:
         self.channel.queue_declare(queue=consumer_type)
         self.channel.basic_consume(self.callback, queue=consumer_type,
                                    no_ack=True)
+        self.client = ''
 
     def start_consuming(self):
         self.channel.start_consuming()
@@ -54,11 +57,13 @@ class StockBot(_RabbitConsumer):
 
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
+        print('Stock quote of ', body)
         body = body.decode('utf-8')
-        result = self.api.retreive(body)
+        self.client, company = body.split('|')
+        result = self.api.retreive(company)
 
-        return_message = self.make_return_str(body, result)
-        redistribute(return_message)
+        return_message = self.make_return_str(company, result)
+        redistribute(self.client, return_message)
 
     def make_return_str(self, search, api_data):
         # This API returns a stock average
@@ -94,11 +99,13 @@ class DayRangeBot(_RabbitConsumer):
 
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
+        print('Day range of ', body)
         body = body.decode('utf-8')
-        result = self.api.retreive(body)
+        self.client, company = body.split('|')
+        result = self.api.retreive(company)
 
-        return_message = self.make_return_str(body, result)
-        redistribute(return_message)
+        return_message = self.make_return_str(company, result)
+        redistribute(self.client, return_message)
 
     def make_return_str(self, search, api_data):
         # This API returns a stock range for the day
