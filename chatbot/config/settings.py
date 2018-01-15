@@ -5,8 +5,11 @@ from config import secrets
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = secrets.DJANGO_SECRET_KEY
-DEBUG = False
-ALLOWED_HOSTS = ['127.0.0.1']
+
+# Setting DEBUG to False leave us with unhandled static files
+# we are nowhere near production, so lets leave this True
+DEBUG = True
+ALLOWED_HOSTS = []
 
 
 # Application definition
