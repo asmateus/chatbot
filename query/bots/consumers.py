@@ -3,6 +3,7 @@ import pika
 import sys
 
 from . import types
+from . import apis
 
 
 class _RabbitConsumer:
@@ -15,13 +16,13 @@ class _RabbitConsumer:
         self.channel.queue_declare(queue=consumer_type)
         self.channel.basic_consume(self.callback, queue=consumer_type,
                                    no_ack=True)
-        self.start_consuming()
 
     def start_consuming(self):
         self.channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
-        print('Received', body)
+        print('Got here')
+        raise NotImplementedError
 
 
 class StockBot(_RabbitConsumer):
@@ -29,7 +30,14 @@ class StockBot(_RabbitConsumer):
 
     def __init__(self):
         super(StockBot, self).__init__(StockBot.TYPE)
-        print(self)
+        self.api = apis.StockAPI()
+
+        self.start_consuming()
+
+    def callback(self, ch, method, properties, body):
+        # Received a petition for a stock request
+        result = self.api.retreive(body.decode('utf-8'))
+        print(self, result)
 
 
 class DayRangeBot(_RabbitConsumer):
@@ -37,7 +45,14 @@ class DayRangeBot(_RabbitConsumer):
 
     def __init__(self):
         super(DayRangeBot, self).__init__(DayRangeBot.TYPE)
-        print(self)
+        self.api = apis.DayRangeAPI()
+
+        self.start_consuming()
+
+    def callback(self, ch, method, properties, body):
+        # Received a petition for a stock request
+        result = self.api.retreive(body.decode('utf-8'))
+        print(self, result)
 
 
 if __name__ == '__main__':
