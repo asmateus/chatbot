@@ -1,5 +1,19 @@
 # Financial Chat Bot
-Financial chat bot is a simple conversation bot that supports user management and conversation storage. A simple front-end interface is offered, but it can be entirely interacted from the command line, or some kind of client application (samples are provided in `extra`).
+Financial chat bot is a simple conversation bot that supports user management and conversation storage. A simple front-end interface is offered to easy interaction.
+
+## Requirement checklist
+The requirements of the project are as follows
+
+- [x] Have persistent users with profiles (it may imply user creation, login, logout)
+- [x] Have a message history and order them by timestamp (order direction assumed as most recent first)
+- [x] Make the history accessible from the profile (other sites also accessible)
+- [x] Show only 50 last messages (as a bonus a `limit_to=#` parameter can be passed to the get request to modify the limit, -1 means no limit)
+- [x] Handle commands `/stock=<>` and `/day_range=<>` from the user (in the chatroom) differently
+- [x] Special commands launch decoupled bots to retreive data from an API (different from bot to bot)
+- [x] Bot will reply back to the user when the result is available
+- [x] Special commands and bot responses are not saved to database
+- [ ] Test what should be tested
+- [ ] Provide error handling for bots
 
 ## Installation
 Make sure you install the following:
