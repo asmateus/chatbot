@@ -56,7 +56,7 @@ To start the bots (from the project root directory):
     
     python -m query.spawner
     
-The `spawner` will tell the PIDs of the processes it created, so you can later kill them via `kill [pids]`
+The `spawner` will tell the PIDs of the processes it created, so you can later kill them via `kill [pids]`.
 
 To start the webserver (from the project root directory):
 
