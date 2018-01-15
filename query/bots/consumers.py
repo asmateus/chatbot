@@ -1,3 +1,25 @@
+"""
+Consumers definition module.
+The different kinds of querybots (consumers) are
+defined here. All consumers inherit from RabbitConsumer
+and should define class level variables:
+    TYPE: matching types.Query.XX
+    MSG_OK: message to render when the consumer
+            finishes successfully.
+    MSG_ERROR: message to render on error.
+A callback needs to be implemented and is called
+when the channel of the matching type of the bot
+has a message.
+Upon successful finish, bots redistribute the message
+to the client using redistribute function, through a
+special channel:
+    channel: redistribution-<client-username>
+
+Warning: For safety reasons do not execute this module
+         directly, use the spawner.
+"""
+
+
 import argparse
 import pika
 import sys
@@ -30,7 +52,8 @@ class _RabbitConsumer:
             pika.ConnectionParameters('localhost'))
         self.channel = self.connection.channel()
         self.channel.queue_declare(queue=consumer_type)
-        self.channel.basic_consume(self.callback, queue=consumer_type,
+        self.channel.basic_consume(self.callback,
+                                   queue=consumer_type,
                                    no_ack=True)
         self.client = ''
 
@@ -57,7 +80,7 @@ class StockBot(_RabbitConsumer):
 
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
-        print('Stock quote of ', body)
+        # body: of format username|company
         body = body.decode('utf-8')
         self.client, company = body.split('|')
         result = self.api.retreive(company)
@@ -83,7 +106,8 @@ class StockBot(_RabbitConsumer):
 
             return StockBot.MSG_OK % (search, str_avg)
         except Exception:
-            return StockBot.MSG_ERROR
+            pass
+        return StockBot.MSG_ERROR
 
 
 class DayRangeBot(_RabbitConsumer):
@@ -99,7 +123,7 @@ class DayRangeBot(_RabbitConsumer):
 
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
-        print('Day range of ', body)
+        # body: of format username|company
         body = body.decode('utf-8')
         self.client, company = body.split('|')
         result = self.api.retreive(company)

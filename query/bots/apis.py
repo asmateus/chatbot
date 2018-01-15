@@ -1,3 +1,15 @@
+"""
+API structure is simple:
+* Define a data source (API) from which information
+  is retreived.
+* Define some keywords the client may spell that have
+  other representation in the API backend.
+* Use a parser to convert the retreived data to a
+  dictionary format.
+* Define a retreive function that allows a formatted
+  output.
+"""
+
 import requests
 
 from . import parsers

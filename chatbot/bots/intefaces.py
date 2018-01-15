@@ -1,8 +1,25 @@
+"""
+An interface is a bot user that:
+1. manages user input via receive function
+2. manages bot answers by an __await_message function
+3. sends messages back to the user by __send_back function
+
+An interface can be given a role through the name parameter,
+each role matches a different bot user in the chat.
+Currently only one role is supported.
+
+Note: To keep the system from flooding in Threads, the
+      __await_message spawns a temporal listener, e.g
+      RedistributionListener that consumes the queue
+      for 10 idle seconds. If the worker takes longer, its
+      messages will still be stored in the queue and will
+      be dispatched at the next request from the user.
+"""
+
 import random
 import threading
 import json
 import re
-import pika
 import datetime
 
 from django.contrib.auth.models import User
@@ -11,6 +28,7 @@ from chat import helpers
 from chat import models
 
 from . import types
+from .entities import _RabbitProducer, RedistributionListener
 from .generic_answers import ANSWERS
 
 
@@ -24,76 +42,22 @@ class BotFactory:
         return _Interface(BotFactory._INTERFACES[0])
 
 
-class RedistributionListener:
-    """
-    Listen to result from workers
-    """
-    TIMEOUT = 10
-
-    def __init__(self, interface, queue):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters('localhost'))
-        self.channel = self.connection.channel()
-        self.channel.queue_declare(queue=queue)
-        self.channel.basic_consume(self.callback, queue=queue,
-                                   no_ack=True)
-        self.connection.add_timeout(self.TIMEOUT, self.on_timeout)
-
-        self.interface = interface
-
-        # Instead of stop consuming upon callback,
-        # let callback be repeatedly called to empty
-        # the queue of possible stale messages.
-        # Finally timing out gracefully by the
-        # accomplished flag.
-        self.accomplished = False
-        self.start_consuming()
-
-    def on_timeout(self):
-        self.channel.stop_consuming()
-
-        if not self.accomplished:
-            self.interface.on_worker_result('It took me too long... sorry.')
-        else:
-            print('Graceful exit')
-
-    def start_consuming(self):
-        self.channel.start_consuming()
-
-    def callback(self, ch, method, properties, body):
-        self.accomplished = True
-        self.interface.on_worker_result(body.decode('utf-8'))
-
-
-class _RabbitProducer:
-    def __init__(self):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters('localhost'))
-        self.channel = self.connection.channel()
-
-    def post_query(self, query, message, username):
-        """
-        Create a temporal queue for the query.
-        body: of format username|message.
-        message: of format query=company.
-        username: needed for the redistribution queue.
-        """
-        body = username + '|' + message.replace(query + '=', '')
-        self.channel.queue_declare(queue=query)
-        self.channel.basic_publish(
-            exchange='',
-            routing_key=query,
-            body=body)
-        self.connection.close()
-
-
 class _Interface(_RabbitProducer):
+    """
+        _Interface is the front view of the automated
+        system for the client. That is, it simulates
+        a user and handles the user messages. When they
+        are queries (special commands), it will push
+        a RabbitMQ to the queue for the workers to work
+        on, otherwise, it simulates 'intelligent' conversation.
+    """
+
     def __init__(self, name):
         super(_Interface, self).__init__()
         # Lock until a user is found
         self.__locked = True
 
-        # An interface requires an associated user
+        # A user is required to interact in chat
         self.user = None
         try:
             self.user = User.objects.get(username=name)
@@ -104,8 +68,10 @@ class _Interface(_RabbitProducer):
 
     def receive(self, user, message, medium):
         """
-        Receive and interpret message.
-        Spawn bot if required
+        Receive and interpret message. Spawn bot if required
+        user: django.contrib.auth.models.User
+        message: str
+        medium: channels.Group (for answer redirection)
         """
         if self.__locked:
             return
@@ -134,35 +100,11 @@ class _Interface(_RabbitProducer):
         self.__send_back(msg)
 
     def __await_result(self):
+        # This thread will die at 10 seconds of inactivity
         listen_thread = threading.Thread(
             target=RedistributionListener,
             args=(self, 'redistribution-' + self.client.username))
         listen_thread.start()
-
-    def __query_of(self, message):
-        exp = '^QUERY='
-        for query in types.ALL_QUERIES:
-            regex = exp.replace('QUERY', query)
-
-            if re.search(regex, message) is not None:
-                return query
-
-    def __pick_answer(self):
-        return random.choice(ANSWERS[self.user.username])
-
-    def __make_message(self, message, incoming=False):
-        origin, target = self.user, self.client
-
-        if incoming:
-            origin = self.client
-            target = self.user
-
-        msg = models.Message(
-            origin=origin,
-            target=target,
-            content=message,
-        )
-        return msg
 
     def __answer_and_store(self, message):
         # Just pick an answer randomly,
@@ -180,9 +122,35 @@ class _Interface(_RabbitProducer):
         self.__send_back(incoming_msg)
         self.__send_back(answer_msg)
 
+    def __make_message(self, message, incoming=False):
+        origin, target = self.user, self.client
+
+        if incoming:
+            origin = self.client
+            target = self.user
+
+        msg = models.Message(
+            origin=origin,
+            target=target,
+            content=message,
+        )
+        return msg
+
+    def __query_of(self, message):
+        # Look if message matches a query type
+        exp = '^QUERY='
+        for query in types.ALL_QUERIES:
+            regex = exp.replace('QUERY', query)
+
+            if re.search(regex, message) is not None:
+                return query
+
     def __send_back(self, message):
         self.medium.send({'text': json.dumps({
             'created_at': helpers.date_of(message.created_at),
             'username': message.origin.username,
             'message': message.content,
         })})
+
+    def __pick_answer(self):
+        return random.choice(ANSWERS[self.user.username])

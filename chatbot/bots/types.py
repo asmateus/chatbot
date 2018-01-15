@@ -1,3 +1,7 @@
+""" Types of queries to match. Each should resemble a specific bot.
+"""
+
+
 class Query:
     STOCK = '/stock'
     DAY_RANGE = '/day_range'

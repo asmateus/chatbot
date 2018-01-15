@@ -1,3 +1,6 @@
+""" Channel connection handlers (receive, connect and disconnect)
+"""
+
 import json
 
 from channels import Group

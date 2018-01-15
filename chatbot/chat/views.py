@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib import auth
 
 from .models import Message
-from .helpers import *
+from .helpers import (is_authenticated, is_valid, is_user_of_content,
+                      is_not_authenticated, is_created)
 
 
 @is_authenticated('app-chat')
