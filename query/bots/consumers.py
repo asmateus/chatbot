@@ -6,8 +6,6 @@ and should define class level variables:
     TYPE: matching types.Query.XX
     MSG_OK: message to render when the consumer
             finishes successfully.
-    MSG_EMPTY: message to render when API data is not
-               significant.
 A callback needs to be implemented and is called
 when the channel of the matching type of the bot
 has a message.
