@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from chat import helpers
 from chat import models
 
-from .query_bots import ALL_QUERIES
+from . import types
 from .generic_answers import ANSWERS
 
 
@@ -77,7 +77,7 @@ class _Interface(_RabbitProducer):
 
     def __query_of(self, message):
         exp = '^QUERY='
-        for query in ALL_QUERIES:
+        for query in types.ALL_QUERIES:
             regex = exp.replace('QUERY', query)
 
             if re.search(regex, message) is not None:
