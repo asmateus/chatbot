@@ -54,7 +54,7 @@ class _RabbitProducer:
 
     def post_query(self, query, message, username):
         """
-        Create a temporal queue for the query.
+        Create a queue for the query.
         body: of format username|message.
         message: of format query=company.
         username: needed for the redistribution queue.
