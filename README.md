@@ -2,7 +2,7 @@
 Financial chat bot is a simple conversation bot that supports user management and conversation storage. A simple front-end interface is offered to easy interaction.
 
 ## Requirement checklist
-The requirements of the project are as follows
+The requirements of the project are as follows:
 
 - [x] Have persistent users with profiles (it may imply user creation, login, logout)
 - [x] Have a message history and order them by timestamp (order direction assumed as most recent first)
@@ -25,7 +25,7 @@ The financial chatbot, given the requirements, is composed of two independent pa
 
 `query` is a package in charge of spawning background workers that listen to the RabbitMQ server, retreive data from external APIs and post them back to the server. Bots are implemented using **pika**, a lightweight manager for RabbitMQ, and **requests** for API information retrieval.
 
-Currently the project is simple enough for a SQLite database. Secret stuff like the `DJANGO_SECRET_KEY` should be placed in a separated file at `/opt/chatbot/configs.json` or at `<project-root>/chatbot/config/`, prefer the first. To test the project easily, the `setup` script will place a dummy configuration file at the second location if none is found.
+Currently the project is simple enough for a SQLite database. Secret stuff like the `DJANGO_SECRET_KEY` should be placed in a separated file at `~/.chatbot/configs.json`. To test the project easily, the `setup` script will autogenerate a configuration file for you.
 
 ## Installation
 The project requires the following Python packages to be installed (Python 3):
