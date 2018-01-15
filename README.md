@@ -69,12 +69,12 @@ The following directions are available to you:
 
 |                   URL                   |       Site     |
 |:---------------------------------------:| :--------------: |
-| http://localhost:8000/ | Chat Room |
-| http://localhost:8000/chat/ | Chat Room |
-| http://localhost:8000/login/ | Login form |
-| http://localhost:8000/logout/ | Logout request |
-| http://localhost:8000/create-user/ | Create user form |
-| http://localhost:8000/u/<user>/ | Profile page |
-| http://localhost:8000/u/<username>/profile/ | Profile page |
-| http://localhost:8000/u/<username>/profile-edit/ | Profile edition page |
-| http://localhost:8000/u/<username>/history/ | History page |
+| `http://localhost:8000/` | Chat Room |
+| `http://localhost:8000/chat/` | Chat Room |
+| `http://localhost:8000/login/` | Login form |
+| `http://localhost:8000/logout/` | Logout request |
+| `http://localhost:8000/create-user/` | Create user form |
+| `http://localhost:8000/u/<username>/` | Profile page |
+| `http://localhost:8000/u/<username>/profile/` | Profile page |
+| `http://localhost:8000/u/<username>/profile-edit/` | Profile edition page |
+| `http://localhost:8000/u/<username>/history/` | History page |
