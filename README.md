@@ -28,11 +28,22 @@ The financial chatbot, given the requirements, is composed of two independent pa
 Currently the project is simple enough for a SQLite database. Secret stuff like the `DJANGO_SECRET_KEY` should be placed in a separated file at `/opt/chatbot/configs.json` or at `<project-root>/chatbot/config/`, prefer the first. To test the project easily, the `setup` script will place a dummy configuration file at the second location if none is found.
 
 ## Installation
-Make sure you install the following:
+The project requires the following Python packages to be installed (Python 3):
 
 * Django
 * pika
-* RabbitMQ Server
+* channels
+* requests
+* asgi-redis
+
+All of these are installed via `pip` (or `pip3` if the case), further more, a `requirements.txt` file is provided so install the packages via:
+
+    pip install -r requirements.txt
+    
+Additionally the following applications or required:
+
+* rabbitmq (see [this](https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-rabbitmq) to install)
+* redis (easy install: `sudo apt-get install redis-server`)
 
 The source code does not come with database migrations applied, so, to successfully start the chat, make sure to run the `setup.py` script in the `chatbot` sub-directory.
 
