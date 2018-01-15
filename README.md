@@ -15,6 +15,18 @@ The requirements of the project are as follows
 - [ ] Test what should be tested
 - [ ] Provide error handling for bots
 
+## Design specifications
+The financial chatbot, given the requirements, is composed of two independent packages. They can, and should, be executed independently as different processes. The packages are:
+
+    chatbot/
+    query/
+    
+`chatbot` holds the webserver in charge of user interaction, it exposes the user to its stored data. Given the nature of the project (a chat), a real time connection based on web sockets was selected, using **Django** + **Django Channels**.
+
+`query` is a package in charge of spawning background workers that listen to the RabbitMQ server, retreive data from external APIs and post them back to the server. Bots are implemented using **pika**, a lightweight manager for RabbitMQ, and **requests** for API information retrieval.
+
+Currently the project is simple enough for a SQLite database. Secret stuff like the `DJANGO_SECRET_KEY` should be placed in a separated file at `/opt/chatbot/configs.json` or at `<project-root>/chatbot/config/`, prefer the first. To test the project easily, the `setup` script will place a dummy configuration file at the second location if none is found.
+
 ## Installation
 Make sure you install the following:
 
