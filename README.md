@@ -40,7 +40,7 @@ All of these are installed via `pip` (or `pip3` if the case), further more, a `r
 
     pip install -r requirements.txt
     
-Additionally the following applications or required:
+Additionally the following applications are required:
 
 * rabbitmq (see [this](https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-rabbitmq) to install)
 * redis (easy install: `sudo apt-get install redis-server`)
