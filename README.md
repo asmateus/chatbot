@@ -45,17 +45,14 @@ Additionally the following applications or required:
 * rabbitmq (see [this](https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-rabbitmq) to install)
 * redis (easy install: `sudo apt-get install redis-server`)
 
-To wrap up, head to `chatbot` sub-directory and run the `setup` script:
+Do not forget to start/enable the respective services. Finally, head to `chatbot` sub-directory and run the `setup` script:
 
     python setup.py
     
 This will create configuration files, make database migrations and create a user for our bot.
 
-## Configuration
-There is no need to configure anything, as the source code you received contains the configuration file `configs.json` at `chatbot/config`. However this is an edge case, the application normally searches first the `/opt/chatbot/` directory for such a configuration file. This file is private, and is included in the `.gitignore`.
-
 ## Usage
-Once in the `chatbot` root directory, head to the sub-directory `chatbot` and start the Django server:
+To start the webserver (from the project root directory):
 
     cd chatbot
     python manage.py runserver
@@ -64,10 +61,6 @@ Then go to the following url and interact with the application as you see conven
 
     http://localhost:8000/chat
 
-Optional: You can use `curl` to emulate the requests, in `extra` there are some commands with their explanation.
-
-## Testing
-In the `test` module are unit tests and functionality tests for several parts of the application,
-you can go there and see what you can test, or simply run all the testbed with:
-
-    python -m test.complete
+To start the bots (from the project root directory):
+    
+    python -m query.spawner
