@@ -12,7 +12,7 @@ __all__ = ['DJANGO_SECRET_KEY']
 import json
 import os
 
-__TRY_PATHS = ['/opt/chatbot/', os.path.dirname(os.path.abspath(__file__))]
+__TRY_PATHS = [os.path.expanduser('~/.chatbot/')]
 __CONFIG_FILE = 'configs.json'
 
 
