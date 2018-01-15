@@ -1,5 +1,5 @@
 ANSWERS = {
-    'shinobu': [
+    'emily': [
         'Hello traveler, wish to see how the stock market is going.',
         'Mmmm, this does not seem OK.',
         'Is your timezone accurate, I am reading you from the moon.',

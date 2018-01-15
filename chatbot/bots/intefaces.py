@@ -33,7 +33,7 @@ from .generic_answers import ANSWERS
 
 
 class BotFactory:
-    _INTERFACES = ['shinobu']
+    _INTERFACES = ['emily']
 
     @staticmethod
     def new_available_interface() -> '_Interface':
