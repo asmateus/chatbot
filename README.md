@@ -63,7 +63,7 @@ To start the webserver (from the project root directory):
 
 Then go to the following url and interact with the application as you see convenient:
 
-    http://localhost:8000/chat
+    http://localhost:8000/create-user
 
 The following directions are available to you:
 
