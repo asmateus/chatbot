@@ -17,8 +17,6 @@ class StockAPI:
         url = StockAPI.API[0] + stock_of + StockAPI.API[1]
         r = requests.get(url)
 
-        print(url, r)
-
         if formatted:
             return self.parse(r.text)
         return r.text
@@ -37,8 +35,6 @@ class DayRangeAPI:
         stock_of = DayRangeAPI.KNOWN_CONVERSIONS.get(param) or param
         url = DayRangeAPI.API[0] + stock_of + DayRangeAPI.API[1]
         r = requests.get(url)
-
-        print(url, r)
 
         if formatted:
             return self.parse(r.text)

@@ -35,7 +35,7 @@ class _RabbitProducer:
         self.channel.basic_publish(
             exchange='',
             routing_key=query,
-            body=message.replace(query, ''))
+            body=message.replace(query + '=', ''))
         self.connection.close()
 
 

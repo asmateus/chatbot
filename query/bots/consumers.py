@@ -8,6 +8,8 @@ from . import apis
 
 class _RabbitConsumer:
     TYPE = None
+    MSG_OK = ''
+    MSG_ERROR = ''
 
     def __init__(self, consumer_type):
         self.connection = pika.BlockingConnection(
@@ -24,9 +26,14 @@ class _RabbitConsumer:
         print('Got here')
         raise NotImplementedError
 
+    def make_return_str(self, api_data):
+        raise NotImplementedError
+
 
 class StockBot(_RabbitConsumer):
     TYPE = types.Query.STOCK
+    MSG_OK = '%s quote is $%s per share.'
+    MSG_ERROR = 'No results from your query.'
 
     def __init__(self):
         super(StockBot, self).__init__(StockBot.TYPE)
@@ -37,11 +44,36 @@ class StockBot(_RabbitConsumer):
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
         result = self.api.retreive(body.decode('utf-8'))
-        print(self, result)
+
+        return_message = self.make_return_str(result)
+        print(return_message)
+
+    def make_return_str(self, api_data):
+        # This API returns a stock average
+        stock_high = api_data.get('High')
+        stock_open = api_data.get('Open')
+        stock_close = api_data.get('Close')
+        stock_low = api_data.get('Low')
+        company = api_data.get('Symbol')
+
+        # Try calculating OHLC average
+        try:
+            so, sh, sl, sc = map(float,
+                                 [stock_open, stock_high, stock_low, stock_close])
+            average = (so + sh + sl + sc) / 4
+
+            # Convert to string, with 2 significant figures
+            str_avg = str(round(average, 2))
+
+            return StockBot.MSG_OK % (company, str_avg)
+        except Exception:
+            return StockBot.MSG_ERROR
 
 
 class DayRangeBot(_RabbitConsumer):
     TYPE = types.Query.DAY_RANGE
+    MSG_OK = '%s Days Low quote is $%s and Days High quote is $%s.'
+    MSG_ERROR = 'No results from your query.'
 
     def __init__(self):
         super(DayRangeBot, self).__init__(DayRangeBot.TYPE)
@@ -52,7 +84,19 @@ class DayRangeBot(_RabbitConsumer):
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
         result = self.api.retreive(body.decode('utf-8'))
-        print(self, result)
+
+        return_message = self.make_return_str(result)
+        print(return_message)
+
+    def make_return_str(self, api_data):
+        # This API returns a stock range for the day
+        stock_high = api_data.get('High')
+        stock_low = api_data.get('Low')
+        company = api_data.get('Symbol')
+
+        if stock_high and stock_low and company:
+            return DayRangeBot.MSG_OK % (company, stock_low, stock_high)
+        return DayRangeBot.MSG_ERROR
 
 
 if __name__ == '__main__':
