@@ -13,7 +13,7 @@ The requirements of the project are as follows:
 - [x] Bot will reply back to the user when the result is available
 - [x] Special commands and bot responses are not saved to database
 - [ ] Test what should be tested
-- [ ] Provide error handling for bots
+- [x] Provide error handling for bots
 
 ## Design specifications
 The financial chatbot, given the requirements, is composed of two independent packages. They can, and should, be executed independently as different processes. The packages are:

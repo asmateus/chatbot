@@ -6,7 +6,8 @@ and should define class level variables:
     TYPE: matching types.Query.XX
     MSG_OK: message to render when the consumer
             finishes successfully.
-    MSG_ERROR: message to render on error.
+    MSG_EMPTY: message to render when API data is not
+               significant.
 A callback needs to be implemented and is called
 when the channel of the matching type of the bot
 has a message.
@@ -17,6 +18,9 @@ special channel:
 
 Warning: For safety reasons do not execute this module
          directly, use the spawner.
+Note: Two types of error are handled:
+      1. Not recognized body format
+      2. Exception during execution
 """
 
 
@@ -45,7 +49,10 @@ def redistribute(client, message):
 class _RabbitConsumer:
     TYPE = None
     MSG_OK = ''
-    MSG_ERROR = ''
+    MSG_EMPTY = 'No results from your query.'
+    MSG_MALFORMED = 'Wrong query format.'
+    MSG_ERROR = 'API unavailable.'
+    MSG_NO_CLIENT = 'Client undetermined.'
 
     def __init__(self, consumer_type):
         self.connection = pika.BlockingConnection(
@@ -61,7 +68,25 @@ class _RabbitConsumer:
         self.channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
-        raise NotImplementedError
+        # Received a petition for a stock request
+        self.client, company = self.handle_income_message(body)
+
+        # If client is None, abort all
+        if not self.client:
+            print(self.MSG_NO_CLIENT)
+            return
+
+        if company:
+            try:
+                result = self.api.retreive(company)
+                return_message = self.make_return_str(company, result)
+            except Exception:
+                # API is unsuitable
+                redistribute(self.client, self.MSG.MSG_ERROR)
+            else:
+                redistribute(self.client, return_message)
+        else:
+            redistribute(self.client, self.MSG_MALFORMED)
 
     def make_return_str(self, api_data):
         raise NotImplementedError
@@ -70,7 +95,6 @@ class _RabbitConsumer:
 class StockBot(_RabbitConsumer):
     TYPE = types.Query.STOCK
     MSG_OK = '%s quote is $%s per share.'
-    MSG_ERROR = 'No results from your query.'
 
     def __init__(self):
         super(StockBot, self).__init__(StockBot.TYPE)
@@ -78,15 +102,13 @@ class StockBot(_RabbitConsumer):
 
         self.start_consuming()
 
-    def callback(self, ch, method, properties, body):
-        # Received a petition for a stock request
-        # body: of format username|company
-        body = body.decode('utf-8')
-        self.client, company = body.split('|')
-        result = self.api.retreive(company)
+    def handle_income_message(self, message):
+        # message: of format username|company
+        message = message.decode('utf-8')
 
-        return_message = self.make_return_str(company, result)
-        redistribute(self.client, return_message)
+        if len(message.split('|')) == 2:
+            return message.split('|')
+        return None, None
 
     def make_return_str(self, search, api_data):
         # This API returns a stock average
@@ -104,16 +126,15 @@ class StockBot(_RabbitConsumer):
             # Convert to string, with 2 significant figures
             str_avg = str(round(average, 2))
 
-            return StockBot.MSG_OK % (search, str_avg)
+            return self.MSG_OK % (search, str_avg)
         except Exception:
             pass
-        return StockBot.MSG_ERROR
+        return self.MSG_EMPTY
 
 
 class DayRangeBot(_RabbitConsumer):
     TYPE = types.Query.DAY_RANGE
     MSG_OK = '%s Days Low quote is $%s and Days High quote is $%s.'
-    MSG_ERROR = 'No results from your query.'
 
     def __init__(self):
         super(DayRangeBot, self).__init__(DayRangeBot.TYPE)
@@ -121,15 +142,13 @@ class DayRangeBot(_RabbitConsumer):
 
         self.start_consuming()
 
-    def callback(self, ch, method, properties, body):
-        # Received a petition for a stock request
-        # body: of format username|company
-        body = body.decode('utf-8')
-        self.client, company = body.split('|')
-        result = self.api.retreive(company)
+    def handle_income_message(self, message):
+        # message: of format username|company
+        message = message.decode('utf-8')
 
-        return_message = self.make_return_str(company, result)
-        redistribute(self.client, return_message)
+        if len(message.split('|')) == 2:
+            return message.split('|')
+        return None, None
 
     def make_return_str(self, search, api_data):
         # This API returns a stock range for the day
@@ -137,8 +156,8 @@ class DayRangeBot(_RabbitConsumer):
         stock_low = api_data.get('Low')
 
         if stock_high and stock_low:
-            return DayRangeBot.MSG_OK % (search, stock_low, stock_high)
-        return DayRangeBot.MSG_ERROR
+            return self.MSG_OK % (search, stock_low, stock_high)
+        return self.MSG_EMPTY
 
 
 if __name__ == '__main__':
