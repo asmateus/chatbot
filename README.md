@@ -52,6 +52,10 @@ Do not forget to start/enable the respective services. Finally, head to `chatbot
 This will create configuration files, make database migrations and create a user for our bot.
 
 ## Usage
+To start the bots (from the project root directory):
+    
+    python -m query.spawner
+
 To start the webserver (from the project root directory):
 
     cd chatbot
@@ -61,6 +65,16 @@ Then go to the following url and interact with the application as you see conven
 
     http://localhost:8000/chat
 
-To start the bots (from the project root directory):
-    
-    python -m query.spawner
+The following directions are available to you:
+
+|                   URL                   |       Site     |
+|:---------------------------------------:| :--------------: |
+| http://localhost:8000/ | Chat Room |
+| http://localhost:8000/chat/ | Chat Room |
+| http://localhost:8000/login/ | Login form |
+| http://localhost:8000/logout/ | Logout request |
+| http://localhost:8000/create-user/ | Create user form |
+| http://localhost:8000/u/<username>/ | Profile page |
+| http://localhost:8000/u/<username>/profile/ | Profile page |
+| http://localhost:8000/u/<username>/profile-edit/ | Profile edition page |
+| http://localhost:8000/u/<username>/history/ | History page |
