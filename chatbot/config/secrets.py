@@ -1,8 +1,7 @@
 """
 Small utility module for loading private information.
-Loads configs.json from two possible locations:
-    /opt/chatbot/configs.json
-    configs.json (current directory)
+Loads configs.json from:
+    ~/.chatbot/configs.json
 In that order. Otherwise, it falls back to some default
 value.
 """
