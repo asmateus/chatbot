@@ -45,7 +45,11 @@ Additionally the following applications or required:
 * rabbitmq (see [this](https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-rabbitmq) to install)
 * redis (easy install: `sudo apt-get install redis-server`)
 
-The source code does not come with database migrations applied, so, to successfully start the chat, make sure to run the `setup.py` script in the `chatbot` sub-directory.
+To wrap up, head to `chatbot` sub-directory and run the `setup` script:
+
+    python setup.py
+    
+This will create configuration files, make database migrations and create a user for our bot.
 
 ## Configuration
 There is no need to configure anything, as the source code you received contains the configuration file `configs.json` at `chatbot/config`. However this is an edge case, the application normally searches first the `/opt/chatbot/` directory for such a configuration file. This file is private, and is included in the `.gitignore`.
