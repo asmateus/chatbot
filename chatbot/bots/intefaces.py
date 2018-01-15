@@ -1,7 +1,9 @@
 import random
+import threading
 import json
 import re
 import pika
+import datetime
 
 from django.contrib.auth.models import User
 
@@ -20,6 +22,36 @@ class BotFactory:
         # There is no requirement for a specific
         # interface so, get the first one.
         return _Interface(BotFactory._INTERFACES[0])
+
+
+class RedistributionListener:
+    """
+    Listen to result from workers
+    """
+    TIMEOUT = 10
+
+    def __init__(self, interface):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters('localhost'))
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue='redistribution')
+        self.channel.basic_consume(self.callback, queue='redistribution',
+                                   no_ack=True)
+        self.connection.add_timeout(self.TIMEOUT, self.on_timeout)
+
+        self.interface = interface
+        self.start_consuming()
+
+    def on_timeout(self):
+        self.channel.stop_consuming()
+        self.interface.on_worker_result('It took me too long... sorry.')
+
+    def start_consuming(self):
+        self.channel.start_consuming()
+
+    def callback(self, ch, method, properties, body):
+        self.channel.stop_consuming()
+        self.interface.on_worker_result(body.decode('utf-8'))
 
 
 class _RabbitProducer:
@@ -74,6 +106,22 @@ class _Interface(_RabbitProducer):
 
         # Message was a special command
         self.post_query(query, message)
+        self.__await_result()
+
+    def on_worker_result(self, result):
+        msg = self.__make_message(result)
+
+        # Message is not saved so, manual creation of
+        # timestamp is needed
+        msg.created_at = datetime.datetime.now()
+
+        self.__send_back(msg)
+
+    def __await_result(self):
+        listen_thread = threading.Thread(
+            target=RedistributionListener,
+            args=(self,))
+        listen_thread.start()
 
     def __query_of(self, message):
         exp = '^QUERY='

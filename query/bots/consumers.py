@@ -6,6 +6,18 @@ from . import types
 from . import apis
 
 
+def redistribute(message):
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue='redistribution')
+    channel.basic_publish(
+        exchange='',
+        routing_key='redistribution',
+        body=message)
+    connection.close()
+
+
 class _RabbitConsumer:
     TYPE = None
     MSG_OK = ''
@@ -23,7 +35,6 @@ class _RabbitConsumer:
         self.channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
-        print('Got here')
         raise NotImplementedError
 
     def make_return_str(self, api_data):
@@ -43,18 +54,18 @@ class StockBot(_RabbitConsumer):
 
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
-        result = self.api.retreive(body.decode('utf-8'))
+        body = body.decode('utf-8')
+        result = self.api.retreive(body)
 
-        return_message = self.make_return_str(result)
-        print(return_message)
+        return_message = self.make_return_str(body, result)
+        redistribute(return_message)
 
-    def make_return_str(self, api_data):
+    def make_return_str(self, search, api_data):
         # This API returns a stock average
         stock_high = api_data.get('High')
         stock_open = api_data.get('Open')
         stock_close = api_data.get('Close')
         stock_low = api_data.get('Low')
-        company = api_data.get('Symbol')
 
         # Try calculating OHLC average
         try:
@@ -65,7 +76,7 @@ class StockBot(_RabbitConsumer):
             # Convert to string, with 2 significant figures
             str_avg = str(round(average, 2))
 
-            return StockBot.MSG_OK % (company, str_avg)
+            return StockBot.MSG_OK % (search, str_avg)
         except Exception:
             return StockBot.MSG_ERROR
 
@@ -83,19 +94,19 @@ class DayRangeBot(_RabbitConsumer):
 
     def callback(self, ch, method, properties, body):
         # Received a petition for a stock request
-        result = self.api.retreive(body.decode('utf-8'))
+        body = body.decode('utf-8')
+        result = self.api.retreive(body)
 
-        return_message = self.make_return_str(result)
-        print(return_message)
+        return_message = self.make_return_str(body, result)
+        redistribute(return_message)
 
-    def make_return_str(self, api_data):
+    def make_return_str(self, search, api_data):
         # This API returns a stock range for the day
         stock_high = api_data.get('High')
         stock_low = api_data.get('Low')
-        company = api_data.get('Symbol')
 
-        if stock_high and stock_low and company:
-            return DayRangeBot.MSG_OK % (company, stock_low, stock_high)
+        if stock_high and stock_low:
+            return DayRangeBot.MSG_OK % (search, stock_low, stock_high)
         return DayRangeBot.MSG_ERROR
 
 
