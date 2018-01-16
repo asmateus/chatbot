@@ -152,9 +152,11 @@ class DayRangeBot(_RabbitConsumer):
         stock_high = api_data.get('High')
         stock_low = api_data.get('Low')
 
-        if stock_high and stock_low:
-            return self.MSG_OK % (search, stock_low, stock_high)
-        return self.MSG_EMPTY
+        try:
+            float(stock_high), float(stock_low)
+        except Exception:
+            return self.MSG_EMPTY
+        return self.MSG_OK % (search, stock_low, stock_high)
 
 
 if __name__ == '__main__':

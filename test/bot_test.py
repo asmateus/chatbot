@@ -175,19 +175,63 @@ class MalformedQueryHandling:
 
 
 class EmptyAPIResponse:
+    """
+    Test idea:
+            1. Create a simple producer
+            2. Publish N known non existent companies
+            3. Start consumers
+            4. Check redistribution channel
+            5. Consume from redistribution channel
+            6. Check messages
+    """
+    QUEUES = ['/stock', '/day_range']
+    COMPANIES = [str(i + 1) for i in range(3)]
+    MSG_EMPTY = 'No results from your query.'
+
     def __init__(self):
-        pass
+        self.producer = _RabbitProducer()
 
     def test(self):
+        print('Creating queries of non existent companies...')
+        for q in self.QUEUES:
+            print(q + ':', end=' ')
+            for c in self.COMPANIES:
+                self.producer.post_query(q, 'testing-suite|' + c)
+            print(self.check_queue_size(q))
+
+        print('Spawning consumers...')
+        worker_pids = spawner.Spawner.spawn()
+
+        # Wait for workers
+        time.sleep(10)
+
+        # Stop workers
+        for pid in worker_pids:
+            print('Killing consumer', pid)
+            p = sp.Popen(['kill', str(pid)])
+            p.wait()
+
+        # Fetch messages from redistribution queue
+        print('Fetching messages from redistribution-testing-suite')
+
+        total_to_read = self.check_queue_size('redistribution-testing-suite')
+        consumer = _RabbitConsumer('redistribution-testing-suite', total_to_read)
+        consumer.start_consuming()
+
+        total = consumer.messages.count(self.MSG_EMPTY)
+        print('Total empty API messages:', total)
+
+        print('Deleting redistribution queue...')
+        self.producer.channel.queue_delete(queue='redistribution-testing-suite')
+        print('Closing...')
+        self.producer.close()
+
+        if total == len(self.QUEUES) * len(self.COMPANIES):
+            return 0
         return 1
 
-
-class CorrectResponseFormat:
-    def __init__(self):
-        pass
-
-    def test(self):
-        return 1
+    def check_queue_size(self, q):
+        return self.producer.channel.queue_declare(queue=q).method.message_count
 
 
 def start_tests(tests, t_type=''):
@@ -210,7 +254,6 @@ TESTS_SUPPORTED = {
     'message_redistribution': MessageRedistribution,
     'malformed_query_handling': MalformedQueryHandling,
     'empty_api_response': EmptyAPIResponse,
-    'correct-response-format': CorrectResponseFormat,
 }
 
 
