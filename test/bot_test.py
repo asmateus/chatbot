@@ -16,7 +16,7 @@ class ConnectionToRabbit:
             3. Start consumer
             4. Watch if channel got emptied
     """
-    N = 2000
+    N = 100
     QUEUES = ['/stock', '/day_range']
 
     def __init__(self):
@@ -34,7 +34,7 @@ class ConnectionToRabbit:
         worker_pids = spawner.Spawner.spawn()
 
         # Wait for workers
-        time.sleep(1)
+        time.sleep(2)
 
         # Stop workers
         for pid in worker_pids:
