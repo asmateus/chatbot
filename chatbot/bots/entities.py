@@ -34,7 +34,8 @@ class RedistributionListener:
         self.channel.stop_consuming()
 
         if not self.accomplished:
-            self.interface.on_worker_result('It took me too long... sorry.')
+            # self.interface.on_worker_result('It took me too long... sorry.')
+            print('Timeout')
         else:
             print('Graceful exit')
 
