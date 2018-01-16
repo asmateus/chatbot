@@ -8,8 +8,11 @@ from .bots import types
 class Spawner:
     @staticmethod
     def spawn(types_to_spawn=types.ALL_QUERIES) -> '_RabbitConsumer':
+        pids = []
         for t in types_to_spawn:
-            Spawner._start_subprocess(t)
+            pids.append(Spawner._start_subprocess(t))
+
+        return pids
 
     @staticmethod
     def _start_subprocess(t):
@@ -22,6 +25,8 @@ class Spawner:
 
         # Display (or log?) PID for future kill
         print('Started consumer of type', t, 'with PID', p.pid)
+
+        return p.pid
 
 
 if __name__ == '__main__':

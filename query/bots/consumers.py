@@ -71,7 +71,6 @@ class _RabbitConsumer:
 
         # If client is None, abort all
         if not self.client:
-            print(self.MSG_NO_CLIENT)
             return
 
         if company:

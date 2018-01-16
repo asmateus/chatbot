@@ -17,4 +17,6 @@ class _RabbitProducer:
             exchange='',
             routing_key=query,
             body=body)
+
+    def close(self):
         self.connection.close()
