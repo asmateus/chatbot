@@ -48,6 +48,8 @@ class ConnectionToRabbit:
             total += self.check_queue_size(q)
 
         print('Commands left', total)
+        print('Closing...')
+        self.producer.close()
 
         # If 0 test was successful
         return total
@@ -57,11 +59,54 @@ class ConnectionToRabbit:
 
 
 class MessageRedistribution:
+    """
+    Test idea:
+            1. Create a simple producer
+            2. Publish N messages to channel
+            3. Start consumer
+            4. Check redistribution channel
+    """
+    N = 10
+    QUEUES = ['/stock', '/day_range']
+
     def __init__(self):
-        pass
+        self.producer = _RabbitProducer()
 
     def test(self):
+        print('Creating dummy commands...')
+        for q in self.QUEUES:
+            print(q + ':', end=' ')
+            for i in range(self.N):
+                self.producer.post_query(q, 'testing-suite|APPL')
+            print(self.check_queue_size(q))
+
+        print('Spawning consumers...')
+        worker_pids = spawner.Spawner.spawn()
+
+        # Wait for workers
+        time.sleep(10)
+
+        # Stop workers
+        for pid in worker_pids:
+            print('Killing consumer', pid)
+            p = sp.Popen(['kill', str(pid)])
+            p.wait()
+
+        # Check if queues are empty
+        print('Checking redistribution queue: redistribution-testing-suite...')
+        result = self.check_queue_size('redistribution-testing-suite')
+
+        print('Commands in redistribution queue', result)
+        print('Deleting redistribution queue...')
+        self.producer.channel.queue_delete(queue='redistribution-testing-suite')
+        print('Closing...')
+
+        if result == len(self.QUEUES) * self.N:
+            return 0
         return 1
+
+    def check_queue_size(self, q):
+        return self.producer.channel.queue_declare(queue=q).method.message_count
 
 
 class MalformedQueryHandling:
@@ -92,14 +137,15 @@ def start_tests(tests, t_type=''):
     if not isinstance(tests, dict):
         tests = {t_type: tests}
     for test in tests:
-        print('----------', 'Test %s... ' % test, '----------')
+        test_str = '--- Test %s... ' % test
+        print(test_str, '-' * (90 - 1 - len(test_str)))
         Test = tests[test]
         return_val = Test().test()
 
         if return_val == 0:
-            print('----------', 'SUCCEEDED', '----------')
+            print('-' * 90, 'SUCCEEDED')
         else:
-            print('----------', 'FAILED', '----------')
+            print('-' * 90, 'FAILED')
 
 
 TESTS_SUPPORTED = {

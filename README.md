@@ -12,7 +12,7 @@ The requirements of the project are as follows:
 - [x] Special commands launch decoupled bots to retreive data from an API (different from bot to bot)
 - [x] Bot will reply back to the user when the result is available
 - [x] Special commands and bot responses are not saved to database
-- [ ] Test what should be tested
+- [ ] Provide useful tests
 - [x] Provide error handling for bots
 
 ## Design specifications
