@@ -12,7 +12,7 @@ The requirements of the project are as follows:
 - [x] Special commands launch decoupled bots to retreive data from an API (different from bot to bot)
 - [x] Bot will reply back to the user when the result is available
 - [x] Special commands and bot responses are not saved to database
-- [ ] Provide useful tests
+- [x] Provide useful tests
 - [x] Provide error handling for bots
 
 ## Design specifications
@@ -80,3 +80,12 @@ The following directions are available to you:
 | `http://localhost:8000/u/<username>/profile/` | Profile page |
 | `http://localhost:8000/u/<username>/profile-edit/` | Profile edition page |
 | `http://localhost:8000/u/<username>/history/` | History page |
+
+## Testing
+A testing suite for the bots is offered. To trigger a test simply pass the test type to the following command:
+
+    python -m tests.bot_test -t <test-type>
+    
+For all test types see:
+
+    python -m tests.bot_test -h
