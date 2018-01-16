@@ -47,7 +47,7 @@ def create_user(request):
         # username is the only crucial parameter
         # for validation
         username = request.POST.get('username')
-        if not (is_valid(username) or is_created(username)):
+        if (not is_valid(username)) or is_created(username):
             return redirect(reverse('create-user'))
 
         # It is safe to create the user
@@ -56,7 +56,8 @@ def create_user(request):
             username=request.POST.get('username'),
             email=request.POST.get('email'),
             first_name=request.POST.get('first_name'),
-            last_name=request.POST.get('last_name')
+            last_name=request.POST.get('last_name'),
+            password=request.POST.get('password'),
         )
         user.save()
         auth.login(request, user)
